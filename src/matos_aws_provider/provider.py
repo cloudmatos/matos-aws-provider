@@ -115,4 +115,3 @@ class Provider(Connection):
         resource.pop("credentials")
         resource.pop("application_id")
         return resource
-        
