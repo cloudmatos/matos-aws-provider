@@ -23,43 +23,25 @@ class AwsCluster(BaseProvider):
         Construct cluster service
         """
         super().__init__(**kwargs, client_type="eks")
-        self.cluster_names = None
-        if "name" in resource:
-            self.cluster_names = [resource["name"]]
 
     def get_inventory(self) -> Any:
         """
         Service discovery
         """
 
-        clusters = self.conn.list_clusters()
-        clusters = clusters["clusters"]
-        cluster_resources = []
+        return [{"type": "cluster"}]
 
-        for cluster in clusters:
-            location = ""
+    def get_resources(self) -> Any:
+        """
+        Fetches cluster details.
 
-            cluster_details = self.conn.describe_cluster(name=cluster)
-            cluster_details = cluster_details["cluster"]
+        Args:
+        cluster_name: name of the eks instance.
 
-            try:
-                location = (
-                    cluster_details["endpoint"]
-                    .replace(".eks.amazonaws.com", "")
-                    .split(".")[-1]
-                )
-            except Exception as ex:
-                # In some cases location is not available. e.g. when the status is in "CREATING"
-                logger.error("Cases location is not available %s", str(ex))
-
-            cluster_resources.append(
-                {
-                    "name": cluster_details["name"],
-                    "type": "cluster",
-                    "location": location,
-                }
-            )
-        return cluster_resources
+        return: dictionary object.
+        """
+        cluster_details = self.get_cluster_details()
+        return cluster_details
 
     def get_cluster_client(
         self,
@@ -76,16 +58,16 @@ class AwsCluster(BaseProvider):
             )
             return token_expiration.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        def get_token(cluster_name: str, role_arn: str = None) -> dict:
+        def get_token(_cluster_name: str, role_arn: str = None) -> dict:
             sts_client = client_factory.get_sts_client(role_arn=role_arn)
-            token = TokenGenerator(sts_client).get_token(cluster_name)
+            _token = TokenGenerator(sts_client).get_token(_cluster_name)
             return {
                 "kind": "ExecCredential",
                 "apiVersion": "client.authentication.k8s.io/v1alpha1",
                 "spec": {},
                 "status": {
                     "expirationTimestamp": get_expiration_time(),
-                    "token": token,
+                    "token": _token,
                 },
             }
 
@@ -99,18 +81,6 @@ class AwsCluster(BaseProvider):
         k8s_client_v1 = kclient.CoreV1Api(k8s_client)
 
         return k8s_client_v1
-
-    def get_resources(self) -> Any:
-        """
-        Fetches cluster details.
-
-        Args:
-        cluster_name: name of the eks instance.
-
-        return: dictionary object.
-        """
-        cluster_details = self.get_cluster_details()
-        return cluster_details
 
     def get_object_count(
         self,
@@ -295,28 +265,15 @@ class AwsCluster(BaseProvider):
                         f"Error add cluster objects from cloud watch {cluster_cloud_ex}"
                     )
 
-        if self.cluster_names and len(self.cluster_names) == 1:
-            name = self.cluster_names[0]
-            cluster_details = self.conn.describe_cluster(name=name)
-            cluster_details = cluster_details.get("cluster")
-            if cluster_details and fetch_objects:
-                add_objects(cluster_details)
-            return cluster_details
-
         clusters = self.conn.list_clusters()
         clusters_details = []
 
         for name in clusters.get("clusters", []):
-
-            if self.cluster_names and name not in self.cluster_names:
-                continue
-
             data = self.conn.describe_cluster(name=name)
             cluster = data.get("cluster")
-
             if cluster and fetch_objects:
                 add_objects(cluster)
-
+            cluster["type"] = "cluster"
             clusters_details.append(cluster)
 
         return clusters_details
@@ -325,4 +282,3 @@ class AwsCluster(BaseProvider):
 def register() -> Any:
     """Register plugins"""
     factory.register("cluster", AwsCluster)
-    factory.register("eks", AwsCluster)
