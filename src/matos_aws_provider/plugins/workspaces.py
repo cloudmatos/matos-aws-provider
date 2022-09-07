@@ -26,7 +26,7 @@ class AwsCloudWorkspaces(BaseProvider):
                 response = self.conn.describe_workspaces(NextToken=next_token)
             else:
                 response = self.conn.describe_workspaces()
-            topics += [{**item, "type": "workspaces"} for item in response.get("Workspaces", [])]
+            workspaces += [{**item, "type": "workspaces"} for item in response.get("Workspaces", [])]
             if "NextToken" in response:
                 describe_workspaces(workspaces, response["NextToken"])
 
@@ -46,9 +46,11 @@ class AwsCloudWorkspaces(BaseProvider):
     def describe_workspaces_connection_status(self, workspace_id):
         """Get topic attributes"""
         response = self.conn.describe_workspaces_connection_status(WorkspaceIds=[workspace_id])
+        connection_state = None
         for workspaces_connection in response.get("WorkspacesConnectionStatus"):
             if "ConnectionState" in workspaces_connection:
-                return workspaces_connection.get("ConnectionState")
+                connection_state = workspaces_connection.get("ConnectionState")
+        return connection_state
 
 def register() -> Any:
     """Register plugin"""
