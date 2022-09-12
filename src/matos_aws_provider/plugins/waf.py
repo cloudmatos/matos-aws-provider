@@ -66,7 +66,7 @@ class AwsCloudWAF(BaseProvider):
         return resource
 
     def waf_list_rules(self):
-        """List waf rule"""
+        """List wafs rule"""
         waf_rule = []
 
         def list_rules(next_marker, waf_rule):
