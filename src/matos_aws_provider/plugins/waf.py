@@ -17,7 +17,6 @@ class AwsCloudWAF(BaseProvider):
         self.waf = self.client('waf')
         self.wafv2 = self.client('wafv2')
         self.waf_regional = self.client('waf-regional')
-        
 
     def get_inventory(self) -> Any:
         """
@@ -42,7 +41,7 @@ class AwsCloudWAF(BaseProvider):
                 webacl[
                     "WebACLs"
                 ] = self.wafv2.get_web_acl(Name=webacl["Name"], Scope='REGIONAL', Id=webacl["Id"])
-        
+
         resource["WAFV2RuleGroups"] = self.wafv2_list_rule_groups()
         for rulegroup in resource["WAFV2RuleGroups"]:
             if "Id" in rulegroup:
@@ -56,7 +55,7 @@ class AwsCloudWAF(BaseProvider):
                 webacl[
                     "WebACLs"
                 ] = self.waf_regional.get_web_acl(WebACLId=webacl["WebACLId"])
-        
+
         resource["WAFRegionalRules"] = self.wafregional_list_rule()
         for rule in resource["WAFRegionalRules"]:
             if "RuleId" in rule:
@@ -80,7 +79,7 @@ class AwsCloudWAF(BaseProvider):
         if resp.get("NextMarker"):
             list_rules(resp.get("NextMarker"), waf_rule)
         return waf_rule
-    
+
     def wafv2_list_web_acls(self):
         """List wafv2 web acl"""
         wafv2_acl = []
@@ -128,7 +127,7 @@ class AwsCloudWAF(BaseProvider):
         if resp.get("NextMarker"):
             list_web_acls(resp.get("NextMarker"), wafregional_acl)
         return wafregional_acl
-    
+
     def wafregional_list_rule(self):
         """List waf regional rule"""
         wafregional_rules = []
