@@ -118,7 +118,7 @@ class AwsNetwork(BaseProvider):
             firewall_detail["FirewallPolicy"]: policy_detail.get("FirewallPolicy",{})
             firewall_data.append(firewall_detail)
         return firewall_data
-    
+
     def get_network_interface(self):
         """Get network interface"""
         try:
