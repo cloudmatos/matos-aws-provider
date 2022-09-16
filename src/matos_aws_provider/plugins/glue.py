@@ -138,7 +138,7 @@ class AwsGlue(BaseProvider):
         else:
             try:
                 resp = self.glue.get_resource_policy()
-            except Exception as ex:
+            except Exception :
                 return {}
 
         return resp
