@@ -50,3 +50,4 @@ def register() -> Any:
         Any: register class
     """
     factory.register("secretsmanager", AwsSecretsManager)
+
