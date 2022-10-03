@@ -16,6 +16,7 @@ class AwsNetwork(BaseProvider):
         """
         self.network = resource
         super().__init__(**kwargs, client_type="ec2")
+        self.network_firewall = self.client("network-firewall")
 
     def get_inventory(self) -> Any:
         """Get asset inventory"""
@@ -71,7 +72,6 @@ class AwsNetwork(BaseProvider):
         """
         subnets = self.get_subnet()
         network_acl = self.get_network_acl()
-
         self.network = {
             **self.network,
             "subnets": subnets,
@@ -81,8 +81,43 @@ class AwsNetwork(BaseProvider):
             "instance_sg": self.get_instance_sg_list(),
             "endpoints": self.get_vpc_endpoints(),
             "network_interfaces": self.get_network_interface(),
+            "network_firewalls": self.get_network_firewalls(),
         }
         return self.network
+
+    def get_network_firewalls(self):
+        """Get Network firewall"""
+
+        def fetch_network_firewalls(firewall_list=None, continueToken: str = None):
+            request = {"VpcIds": [self.network["id"]]}
+            if continueToken:
+                request["NextToken"] = continueToken
+            response = self.network_firewall.list_firewalls(**request)
+            continueToken = response.get("NextToken", None)
+            current_firewall = [] if not firewall_list else firewall_list
+            current_firewall.extend(response.get("Firewalls", []))
+
+            return current_firewall, continueToken
+
+        try:
+            firewall_datas, nextToken = fetch_network_firewalls()
+
+            while nextToken:
+                firewall_datas, nextToken = fetch_network_firewalls(firewall_datas, nextToken)
+        except Exception as ex:
+            logger.warning("network firewall fetch error: %s", ex)
+            return []
+        firewall_data=[]
+        for firewall_data in firewall_datas:
+            firewall_detail ={}
+            firewall_detail["FirewallName"]: firewall_data.get("FirewallName")
+            firewall_detail["FirewallArn"]: firewall_data.get("FirewallArn")
+            res = self.network_firewall.describe_firewall(FirewallName=firewall_data.get("FirewallName"), FirewallArn=firewall_data.get("FirewallArn")).get("Firewall",{})
+            policy_detail = self.network_firewall.describe_firewall_policy(FirewallPolicyArn=res.get("FirewallPolicyArn"))
+            firewall_detail["FirewallPolicyName"]: policy_detail.get("FirewallPolicyResponse",{}).get('FirewallPolicyName')
+            firewall_detail["FirewallPolicy"]: policy_detail.get("FirewallPolicy",{})
+            firewall_data.append(firewall_detail)
+        return firewall_data
 
     def get_network_interface(self):
         """Get network interface"""

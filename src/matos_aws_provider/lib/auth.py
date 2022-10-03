@@ -4,6 +4,7 @@ import logging
 import os
 from typing import Any
 import boto3
+from botocore.client import Config
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +73,8 @@ class Connection:
 
     def client(self, service_name: str, region_name=None) -> Any:
         """Aws client get method"""
+        config = Config(connect_timeout=5, retries={'max_attempts': 0})
+
         if region_name is not None:
-            return self.session.client(service_name, region_name=region_name)
-        return self.session.client(service_name)
+            return self.session.client(service_name, region_name=region_name, config=config)
+        return self.session.client(service_name, config=config)

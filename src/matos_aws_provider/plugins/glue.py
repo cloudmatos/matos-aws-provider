@@ -136,7 +136,11 @@ class AwsGlue(BaseProvider):
         if arn:
             resp = self.glue.get_resource_policy(ResourceArn=arn)
         else:
-            resp = self.glue.get_resource_policy()
+            try:
+                resp = self.glue.get_resource_policy()
+            except Exception :
+                return {}
+
         return resp
 
     def get_connections(self, catalog_id=None):
