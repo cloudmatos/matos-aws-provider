@@ -16,7 +16,6 @@ class BaseProvider(Connection):
     def __init__(self, **kwargs) -> None:
         """Class Constructor method"""
         try:
-
             super().__init__(**kwargs)
             self._client_type = kwargs.pop("client_type")
             if self._client_type:
