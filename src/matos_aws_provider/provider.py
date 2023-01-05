@@ -1,5 +1,6 @@
 import threading
 from typing import List, Any
+import botocore
 import logging
 from matos_aws_provider.lib.auth import Connection
 from matos_aws_provider.plugins import get_package
@@ -91,6 +92,10 @@ class Provider(Connection):
                         if resource_type not in resource_inventories
                         else [*resource_inventories[resource_type], detail]
                     )
+            except botocore.exceptions.ClientError as err:
+                logger.error(f"Permission scan issue at resource: {resource_type} "
+                             f"Error code: {err.response['Error']['Code']}, "
+                             f"error message: {err.response['Error']['Message']}")
             except Exception as e:
                 logger.error(f"{e}")
 
