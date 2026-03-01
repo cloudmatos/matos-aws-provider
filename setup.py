@@ -132,7 +132,7 @@ setup(
         "kubernetes==21.7.0",
         "botocore==1.27.61",
         "boto3==1.24.61",
-        "awscli==1.25.62",
+        "awscli==1.44.38",
     ],  # Optional
     # List additional groups of dependencies here (e.g. development
     # dependencies). Users will be able to install these using the "extras"
